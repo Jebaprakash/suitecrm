@@ -1,17 +1,15 @@
 {
     frankenphp
-    order php_server before file_server
 }
 
-:{$PORT:8080} {
+:8080 {
     root * /app/public
     encode zstd gzip
-
-    # This is the correct way to handle PHP in FrankenPHP
-    # It removes the need for the unix socket and fixes the 502 error
+    
+    # Standard FrankenPHP handler
     php_server
 
-    # Standard rewrites for SuiteCRM 8 / Symfony
+    # Fallback to index.php for SuiteCRM/Symfony routing
     try_files {path} {path}/ /index.php?{query}
 
     file_server
