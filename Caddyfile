@@ -2,15 +2,13 @@
     frankenphp
 }
 
-:8080 {
+:{$PORT:8080} {
     root * /app/public
     encode zstd gzip
-    
-    # Standard FrankenPHP handler
+
+    # Handle PHP files internally
     php_server
 
-    # Fallback to index.php for SuiteCRM/Symfony routing
-    try_files {path} {path}/ /index.php?{query}
-
+    # File server for static assets
     file_server
 }
