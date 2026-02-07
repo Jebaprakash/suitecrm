@@ -1,7 +1,17 @@
-:8080 {
-    root * /app/public
-    php_fastcgi unix//var/run/php/php-fpm.sock
-    file_server
+{
+    frankenphp
+    order php_server before file_server
+}
 
+:{$PORT:8080} {
+    root * /app/public
+    encode zstd gzip
+
+    # Execute PHP files directly using FrankenPHP's embedded engine
+    php_server
+
+    # Fallback to index.php for all other requests (Symfony routing)
     try_files {path} {path}/ /index.php?{query}
+
+    file_server
 }
