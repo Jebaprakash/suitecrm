@@ -3,27 +3,32 @@
     admin off
 }
 
-:{$PORT:8080} {
-    # Force IPv4 binding for Railway compatibility
+# Explicitly use http:// to prevent Caddy from trying to manage TLS
+http://:{$PORT:8080} {
+    # Force IPv4 binding for maximum compatibility with Railway proxy
     bind 0.0.0.0
-    
+
     root * /app/public
     encode zstd gzip
 
-    # Static files first
+    # Static files
     file_server
 
-    # Handle PHP files
-    php_server
+    # PHP handler with error logging enabled
+    php_server {
+        # Ensure it looks for index.php
+        index index.php
+    }
 
-    # Standard Symfony/SuiteCRM 8 routing fallback
+    # Standard Symfony / SuiteCRM 8 rewrites
     @notStatic {
         not file {path}
     }
     rewrite @notStatic /index.php?{query}
 
-    # Enable detailed logs for debugging in Railway dashboard
+    # Log all requests to stdout for Railway logs
     log {
         output stdout
+        format json
     }
 }
