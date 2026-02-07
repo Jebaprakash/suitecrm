@@ -1,17 +1,7 @@
-{
-    frankenphp
-    order php_server before file_server
-}
-
-:{$PORT:8080} {
+:8080 {
     root * /app/public
-    encode zstd gzip
-
-    # Execute PHP files directly using FrankenPHP's embedded engine
-    php_server
-
-    # Fallback to index.php for all other requests (Symfony routing)
-    try_files {path} {path}/ /index.php?{query}
-
+    php_fastcgi 127.0.0.1:9000
     file_server
+
+    try_files {path} {path}/ /index.php?{query}
 }
