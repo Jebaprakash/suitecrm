@@ -2,35 +2,43 @@ FROM php:8.1-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    libzip-dev \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
-    libzip-dev \
-    zip \
+    libonig-dev \
+    libxml2-dev \
     unzip \
-    curl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    git \
+    && docker-php-ext-configure gd \
     && docker-php-ext-install \
-        gd \
-        mysqli \
         pdo \
         pdo_mysql \
         zip \
-    && a2enmod rewrite
+        gd \
+        mbstring \
+        xml \
+        mysqli
+
+# Enable Apache rewrite
+RUN a2enmod rewrite
 
 # Set Apache document root
-ENV APACHE_DOCUMENT_ROOT=/var/www/html
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
-RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
- && sed -ri 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf
 
 # Copy SuiteCRM files
-COPY . /var/www/html/
+COPY . /var/www/html
 
-# Permissions (VERY IMPORTANT)
+# Fix permissions
 RUN chown -R www-data:www-data /var/www/html \
- && chmod -R 755 /var/www/html
+    && chmod -R 755 /var/www/html
 
+# Expose port
 EXPOSE 80
 
+# Start Apache
 CMD ["apache2-foreground"]
