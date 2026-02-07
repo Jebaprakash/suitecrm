@@ -1,36 +1,30 @@
-FROM dunglas/frankenphp:php8.2
+FROM php:8.1-apache
 
-# Install system dependencies including Composer
+# Enable Apache rewrite
+RUN a2enmod rewrite
+
+# Install required PHP extensions
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    libicu-dev libxml2-dev libonig-dev libc-client-dev libkrb5-dev libssl-dev \
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && rm -rf /var/lib/apt/lists/*
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pdo pdo_mysql zip gd
 
-# Install PHP extensions
-RUN docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql zip gd intl mbstring bcmath soap opcache mysqli exif imap xml dom ctype iconv
+# Set Apache document root to SuiteCRM public folder
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
-# Set PHP prod config
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-RUN sed -i 's/memory_limit = .*/memory_limit = 512M/' "$PHP_INI_DIR/php.ini"
+RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 
-WORKDIR /app
+WORKDIR /var/www/html
+
 COPY . .
 
-# Set environment variables for Symfony
-ENV APP_ENV=prod
-ENV APP_DEBUG=0
+RUN chmod -R 777 cache custom logs upload config
 
-# Ensure autoloader is optimized for production
-RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+EXPOSE 80
 
-# Permissions - SuiteCRM 8 needs these to be writable
-RUN mkdir -p cache logs config public/legacy/cache public/legacy/upload public/legacy/custom \
-    && chmod -R 777 cache logs config public/legacy/cache public/legacy/upload public/legacy/custom
-
-# Ensure health check files are present
-RUN echo "Server is UP" > public/test.txt
-
-CMD ["frankenphp", "run", "--config", "/app/Caddyfile"]
+CMD ["apache2-foreground"]
