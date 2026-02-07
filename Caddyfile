@@ -1,5 +1,18 @@
-:8080 {
+{
+    frankenphp
+    order php_server before file_server
+}
+
+:{$PORT:8080} {
     root * /app/public
-    php_fastcgi unix//run/php/php-fpm.sock
+    encode zstd gzip
+
+    # This is the correct way to handle PHP in FrankenPHP
+    # It removes the need for the unix socket and fixes the 502 error
+    php_server
+
+    # Standard rewrites for SuiteCRM 8 / Symfony
+    try_files {path} {path}/ /index.php?{query}
+
     file_server
 }
