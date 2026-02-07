@@ -1,22 +1,29 @@
 {
     frankenphp
-    # Disable admin to avoid port conflicts and log noise
     admin off
 }
 
-:{$PORT} {
-    # Bind to 0.0.0.0 for compatibility with Railway
+:{$PORT:8080} {
+    # Force IPv4 binding for Railway compatibility
     bind 0.0.0.0
     
     root * /app/public
     encode zstd gzip
 
-    # Main PHP handler
-    php_server
-
-    # Static file server
+    # Static files first
     file_server
 
-    # Standard rewrites
-    try_files {path} {path}/ /index.php?{query}
+    # Handle PHP files
+    php_server
+
+    # Standard Symfony/SuiteCRM 8 routing fallback
+    @notStatic {
+        not file {path}
+    }
+    rewrite @notStatic /index.php?{query}
+
+    # Enable detailed logs for debugging in Railway dashboard
+    log {
+        output stdout
+    }
 }
