@@ -1,14 +1,22 @@
 {
     frankenphp
+    # Disable admin to avoid port conflicts and log noise
+    admin off
 }
 
-:{$PORT:8080} {
+:{$PORT} {
+    # Bind to 0.0.0.0 for compatibility with Railway
+    bind 0.0.0.0
+    
     root * /app/public
     encode zstd gzip
 
-    # Handle PHP files internally
+    # Main PHP handler
     php_server
 
-    # File server for static assets
+    # Static file server
     file_server
+
+    # Standard rewrites
+    try_files {path} {path}/ /index.php?{query}
 }
